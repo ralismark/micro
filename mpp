@@ -1,0 +1,60 @@
+#!/usr/bin/perl -w
+use strict;
+
+if (@ARGV == 0) {
+	print "Usage: $0 <source>...\n";
+	print "MIPS Preprocessor. Supports extra directives:\n";
+	print "\n";
+	print "  .include FILE   Textually includes the named file\n";
+	print "  .let \@VAR SUB   Replace all occurences of \@VAR with SUB\n";
+	print "                    e.g. for named variables\n";
+	print "\n";
+	print "To read from stdin, use '-' as the filename.\n";
+	exit;
+}
+
+# args:
+# [0] File name to preprocess
+# [1] Error source, if file couldn't be opened
+sub Preprocess {
+	my $fname = $_[0];
+	open my $file, '<', $fname or die "$_[1]: could not open file $fname\n";
+
+	my %vars = ();
+	my $lineno = 0;
+
+	while (my $line = <$file>) {
+		++$lineno;
+
+		if ($line =~ m/^\s*\.include/) {
+			# .include <file>
+			$line =~ m/^\s*\.include\s+(\S+)\s*$/ or die "$fname:$lineno: malformed include\n";
+			Preprocess($1, "$fname:$lineno");
+		} elsif ($line =~ m/^\s*\.let/) {
+			# .let @<ident> <subst>
+			$line =~ m/^\s*\.let\s+(\S+)\s+(\S+)\s*$/ or die "$fname:$lineno: malformed let\n";
+			my $ident = $1;
+			my $subst = $2;
+			$ident =~ m/^@(\S+)$/ or die "$fname:$lineno: identifer does not start with \@\n";
+			$vars{$1} = $subst;
+		} else {
+			# regular line
+
+			# Replace variables
+			for my $ident (keys %vars) {
+				$line =~ s/\@$ident/$vars{$ident}/g;
+			}
+
+			print $line;
+		}
+	}
+}
+
+for my $file (@ARGV) {
+	if ($file eq "-") {
+		# Bit of a hack to read from stdin
+		Preprocess("/dev/stdin", "<source>");
+	} else {
+		Preprocess($file, "<source>");
+	}
+}
