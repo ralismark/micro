@@ -39,3 +39,5 @@ This is like the git command in that its actions are accessible via `cs <command
 - `cs remote <cmd>...` to sync the files to CSE and run a command.
 - `cs autotest <test>...` to run an autotest on your files (like `2041 autotest shell_backup`)
 - `cs give <exercise> <files>...` to submit files for a given exercise. The task is prepended to exercise, i.e. making `cs give shell_backup backup.sh` run `give cs2041 lab05_shell_backup backup.sh`.
+
+These commands assume that `rsync` is installed on your local system and that `ssh cse` connects to the CSE servers.
