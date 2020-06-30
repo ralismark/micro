@@ -12,12 +12,12 @@ A minimal preprocessor for MIPS (particularly SPIM, which lacks complex directiv
 For example:
 
 ```asm
-// a.s
+# a.s
 .let @foo $s3
 	move @foo, $a0
 .include b.s
 
-// b.s
+# b.s
 .let @foo $t8
 	move $v0, @foo
 ```
