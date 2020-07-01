@@ -11,21 +11,24 @@ A minimal preprocessor for MIPS (particularly SPIM, which lacks complex directiv
 
 For example:
 
-```asm
-# a.s
+<table>
+<tr> <th>a.s</th> <th>b.s</th> </tr>
+<tr> <td><pre lang="asm">
 .let @foo $s3
 	move @foo, $a0
 .include b.s
+</pre></td>
 
-# b.s
+<td><pre lang="asm">
 .let @foo $t8
 	move $v0, @foo
-```
+</pre></td>
+</table>
 
 gets turned into
 
 ```asm
-	move $s3, @a0
+	move $s3, $a0
 	move $v0, $t8
 ```
 
