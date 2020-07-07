@@ -8,6 +8,7 @@ if (@ARGV == 0) {
 	print "  .include FILE   Textually includes the named file\n";
 	print "  .let \@VAR SUB   Replace all occurences of \@VAR with SUB\n";
 	print "                    e.g. for named variables\n";
+	print "  .unlet \@VAR     Undoes a previous let\n";
 	print "\n";
 	print "To read from stdin, use '-' as the filename.\n";
 	exit;
@@ -35,8 +36,15 @@ sub Preprocess {
 			$line =~ m/^\s*\.let\s+(\S+)\s+(\S+)\s*$/ or die "$fname:$lineno: malformed let\n";
 			my $ident = $1;
 			my $subst = $2;
-			$ident =~ m/^@(\S+)$/ or die "$fname:$lineno: identifer does not start with \@\n";
+			$ident =~ m/^@(\S+)$/ or die "$fname:$lineno: .let identifer does not start with \@\n";
 			$vars{$1} = $subst;
+		} elsif ($line =~ m/^\s*\.unlet/) {
+			# .unlet @<ident>
+			$line =~ m/^\s*\.unlet\s+(\S+)\s*$/ or die "$fname:$lineno: malformed unlet\n";
+			my $ident = $1;
+			$ident =~ m/^@(\S+)$/ or die "$fname:$lineno: .unlet identifier does not start with \@\n";
+			exists $vars{$ident} or warn "$fname:$lineno: .unlet variable has not been defined\n";
+			delete $vars{$ident};
 		} else {
 			# regular line
 

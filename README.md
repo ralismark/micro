@@ -8,6 +8,7 @@ A minimal preprocessor for MIPS (particularly SPIM, which lacks complex directiv
 
 - `.include <file>` to textually include a file (like #include in C)
 - `.let @<var> <expr>` to replace all subsequent occurrences of `@var` with `<expr>`
+- `.unlet @<var>` to undo a previous .let
 
 For example:
 
