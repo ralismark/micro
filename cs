@@ -53,8 +53,14 @@ autotest() {
 }
 
 give() {
-	rsync --delete -avh "${@:2}" cse:__workdir__
+	if echo "$1" | grep -q '\.'; then
+		subtask=${1%.*}
+		echo "$(basename "$0"): give: deducing task as '$subtask'"
+		give "$subtask" "$@"
+		return
+	fi
 
+	rsync --delete -avh "${@:2}" cse:__workdir__
 	yes yes | cse give "cs$COURSE" "${TASK}_$1" "${@:2}"
 }
 
