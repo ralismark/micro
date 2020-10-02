@@ -16,6 +16,7 @@ usage: $progname [<options>] <branch> [<committish-to-merge>]
    or: $progname [<options>] (-a | --all)
 
     -a, --all           fast-forward all branches to their tracking branch
+        --fetch         fetch remote before fast-forwarding
     -n, --dryrun        don't make any changes to the repo
 EOF
 	exit 129
@@ -91,6 +92,7 @@ _get_upstream() {
 	git show-ref -s --verify "$remote_ref"
 }
 
+flag_fetch=
 flag_all=
 while getopts ':han-:' optchar; do
 	case "$optchar" in
@@ -98,6 +100,8 @@ while getopts ':han-:' optchar; do
 				all) flag_all=1
 					;;
 				dryrun) flag_dryrun=1
+					;;
+				fetch) flag_fetch=1
 					;;
 				*) echo "error: unknown option \`$OPTARG'" >&2
 					_usage
@@ -120,6 +124,10 @@ shift "$((OPTIND-1))"
 if [ -n "$flag_all" ]; then
 	if [ $# -ne 0 ]; then
 		_usage
+	fi
+
+	if [ -n "$flag_fetch" ]; then
+		git fetch --all
 	fi
 
 	_skip() {
