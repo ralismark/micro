@@ -12,12 +12,15 @@ flag_dryrun=
 
 _usage() {
 	cat >&2 <<EOF
-usage: $progname [<options>] <branch> [<committish-to-merge>]
+usage: $progname [<options>] [<branch> [<committish-to-merge>]]
    or: $progname [<options>] (-a | --all)
 
     -a, --all           fast-forward all branches to their tracking branch
         --fetch         fetch remote before fast-forwarding
     -n, --dryrun        don't make any changes to the repo
+
+Attempts to fast-forward the specified branch (or HEAD) up to the tracking
+branch, or a commit-ish. With --all, fast-forwards all branches.
 EOF
 	exit 129
 }
@@ -177,7 +180,7 @@ if [ -n "$flag_all" ]; then
 		echo
 	done
 else
-	if [ $# -ne 1 ] && [ $# -ne 2 ]; then
+	if [ $# -gt 2 ]; then
 		_usage
 	fi
 
@@ -187,21 +190,32 @@ else
 	fi
 
 	# Get branch we're moving
-	ref="refs/heads/$1"
-	if ! git show-ref --quiet --verify "$ref"; then
-		_die 128 "error: branch '$1' not found"
+	ref=
+	if [ $# -gt 0 ]; then
+		ref="refs/heads/$1"
+		if ! git show-ref --quiet --verify "$ref"; then
+			_die 128 "error: branch '$1' not found"
+		fi
+		shift
+	else
+		ref="$(git rev-parse --symbolic-full-name HEAD)"
+		case "$ref" in
+			refs/heads/*) ;;
+			*) _die 128 "error: no branch checked out"
+				;;
+		esac
 	fi
 
 	# Get target
 	target_hash=
-	if [ $# -lt 2 ]; then
+	if [ $# -gt 0 ]; then
+		if ! target_hash=$(git show-ref -s "$2"); then
+			_die 128 "error: '$2' is not a valid object"
+		fi
+		shift
+	else
 		if ! target_hash=$(_get_upstream "$ref"); then
 			_die 128 "error: no tracking branch for '$1'"
-		fi
-	else
-		# XXX what if there are multiple results
-		if ! target_hash=$(git show-ref -s "$2" | head -n1); then
-			_die 128 "error: '$2' is not a valid object"
 		fi
 	fi
 
