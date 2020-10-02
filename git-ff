@@ -190,14 +190,17 @@ else
 	fi
 
 	# Get branch we're moving
+	ref_shortname=
 	ref=
 	if [ $# -gt 0 ]; then
+		ref_shortname="$1"
 		ref="refs/heads/$1"
 		if ! git show-ref --quiet --verify "$ref"; then
 			_die 128 "error: branch '$1' not found"
 		fi
 		shift
 	else
+		ref_shortname="$(git rev-parse --abbrev-ref HEAD)"
 		ref="$(git rev-parse --symbolic-full-name HEAD)"
 		case "$ref" in
 			refs/heads/*) ;;
@@ -221,11 +224,15 @@ else
 
 	base_hash=$(_fastforward "$ref" "$target_hash")
 
+	_ff_message() {
+		echo "fast-forwarding $ref_shortname: $(_shorthash "$base_hash")..$(_shorthash "$target_hash")"
+	}
+
 	case $? in
-		0) echo "fast-forwarding $1: $(_shorthash "$base_hash")..$(_shorthash "$target_hash")"
+		0) _ff_message
 			git diff --stat "$base_hash" "$target_hash" --
 			;;
-		5) echo "fast-forwarding $1: $(_shorthash "$base_hash")..$(_shorthash "$target_hash")"
+		5) _ff_message
 			echo "nothing to do"
 			;;
 
