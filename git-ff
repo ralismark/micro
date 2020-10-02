@@ -1,0 +1,220 @@
+#!/bin/sh
+
+# Inspired by https://stackoverflow.com/a/4157435/6936976
+
+if [[ "$(git rev-parse --is-inside-work-tree 2> /dev/null)" != "true" ]]; then
+	echo "fatal: not a git repository (or any of the parent directories): .git" >&2
+	exit 128
+fi
+
+progname="git ff"
+flag_dryrun=
+
+_usage() {
+	cat >&2 <<EOF
+usage: $progname [<options>] <branch> [<committish-to-merge>]
+   or: $progname [<options>] (-a | --all)
+
+    -a, --all           fast-forward all branches to their tracking branch
+    -n, --dryrun        don't make any changes to the repo
+EOF
+	exit 129
+}
+
+_die() {
+	echo "$2" >&2
+	exit "$1"
+}
+
+#
+# _fastforward: do the actual fastforwarding
+#
+# usage: _fastforward <full-refname> <target hash>
+#
+# Return codes:
+# * 0: success
+# * 1: merge would not be a fastforward
+# * 2: merge failed: ref has been checked out and ff would overwrite files
+# * 3: update-ref failed
+# * 4: ref doesn't exist
+# * 5: ref is already at target hash
+#
+_fastforward() {
+	refname="$1"
+	target_hash="$2"
+
+	base_hash=$(git show-ref -s --verify "$refname" 2> /dev/null)
+	echo "$base_hash"
+	if [ $? -ne 0 ]; then
+		return 4
+	fi
+
+	if [ "$base_hash" = "$target_hash" ]; then
+		return 5
+	fi
+
+	# Check that this change would fast-forward
+	if [ "$(git merge-base "$base_hash" "$target_hash")" != "$base_hash" ]; then
+		return 1
+	fi
+
+	if [ -n "$flag_dryrun" ]; then
+		# Don't actually do anything
+		return 0
+	fi
+
+	if [ "$(git symbolic-ref HEAD)" = "$refname" ]; then
+		# I think the only way this can fail is if the working tree is dirty
+		git merge --ff-only "$target_hash" >/dev/null || return 2
+	else
+		if ! git update-ref -m "fast forward" "$refname" "$target_hash" "$base_hash" >&2; then
+			return 3
+		fi
+	fi
+}
+
+#
+# _get_upstream <ref>
+# Get the upstream hash of a ref
+#
+_get_upstream() {
+	refname="$1"
+
+	remote_ref=$(git for-each-ref --format='%(upstream)' "$refname")
+	if [ -z "$remote_ref" ]; then
+		return 1
+	fi
+
+	git show-ref -s --verify "$remote_ref"
+}
+
+flag_all=
+while getopts ':han-:' optchar; do
+	case "$optchar" in
+		-) case "$OPTARG" in
+				all) flag_all=1
+					;;
+				dryrun) flag_dryrun=1
+					;;
+				*) echo "error: unknown option \`$OPTARG'" >&2
+					_usage
+					;;
+			esac
+			;;
+		n) flag_dryrun=1
+			;;
+		a) flag_all=1
+			;;
+		h) _usage
+			;;
+		*) echo "error: unknown switch \`$OPTARG'" >&2
+			_usage
+			;;
+	esac
+done
+shift "$((OPTIND-1))"
+
+if [ -n "$flag_all" ]; then
+	if [ $# -ne 0 ]; then
+		_usage
+	fi
+
+	_skip() {
+		printf ' \e[34mskipped\e[0m: %s\n' "$1"
+	}
+
+	error=0
+	git for-each-ref --shell --format='short=%(refname:short) ref=%(refname) upstream=%(upstream)' refs/heads |
+		while read -r branch; do
+			eval " $branch"
+			printf '\e[33m%s\e[0m:\n' "$short"
+			if [ -z "$upstream" ]; then
+				_skip "no tracking branch"
+				echo
+				continue
+			fi
+			target_hash=$(git show-ref -s --verify "$upstream")
+			if [ $? -ne 0 ]; then
+				echo " error: upstream doesn't point to anything"
+				error=1
+				echo
+				continue
+			fi
+
+			base_hash=$(_fastforward "$ref" "$target_hash")
+			case $? in
+				0) printf ' \e[32mfast-forwarded\e[0m: %s\n' "${base_hash:0:7}..${target_hash:0:7}"
+					git diff --stat "$base_hash" "$target_hash" --
+					;;
+				5) _skip "nothing to do"
+					;;
+
+				1) _skip "diverged"
+					;;
+				2) _skip "working tree is dirty"
+					;;
+				3) echo " error: update ref failed"
+					error=1
+					;;
+				4) echo " error: ref doesn't exist"
+					error=1
+					;;
+				*) echo " bug: unhandled return value from _fastforward"
+					error=1
+					;;
+			esac
+
+			echo
+	done
+
+	exit "$error"
+else
+	if [ $# -ne 1 ] && [ $# -ne 2 ]; then
+		_usage
+	fi
+
+	# Get branch we're moving
+	ref="refs/heads/$1"
+	if ! git show-ref --quiet --verify "$ref"; then
+		_die 1 "error: branch '$1' not found"
+	fi
+
+	# Get target
+	target_hash=
+	if [ $# -lt 2 ]; then
+		target_hash=$(_get_upstream "$ref")
+		if [ $? -ne 0 ]; then
+			_die 1 "error: no tracking branch for '$1'"
+		fi
+	else
+		# XXX what if there are multiple results
+		target_hash=$(git show-ref -s "$2" | head -n1)
+		if [ $? -ne 0 ]; then
+			_die 1 "error: '$2' is not a valid object"
+		fi
+	fi
+
+	base_hash=$(_fastforward "$ref" "$target_hash")
+
+	case $? in
+		0) echo "fast-forwarding $1: ${base_hash:0:7}..${target_hash:0:7}"
+			git diff --stat "$base_hash" "$target_hash" --
+			;;
+		5) echo "fast-forwarding $1: ${base_hash:0:7}..${target_hash:0:7}"
+			echo "nothing to do"
+			;;
+
+		1) _die 2 "cannot fast-forward: diverging history"
+			;;
+		2) exit 2
+			;;
+		3) _die 3 "cannot fast-forward: git update-ref failed"
+			;;
+		4) _die 3 "cannot fast-forward: ref '$ref' doesn't exist"
+			;;
+		*) _die 10 "bug: unhandled return value from _fastforward"
+			;;
+	esac
+
+	exit 0
+fi
