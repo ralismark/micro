@@ -223,12 +223,13 @@ else
 	fi
 
 	base_hash=$(_fastforward "$ref" "$target_hash")
+	ff_exit=$?
 
 	_ff_message() {
 		echo "fast-forwarding $ref_shortname: $(_shorthash "$base_hash")..$(_shorthash "$target_hash")"
 	}
 
-	case $? in
+	case "$ff_exit" in
 		0) _ff_message
 			git diff --stat "$base_hash" "$target_hash" --
 			;;
