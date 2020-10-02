@@ -159,7 +159,7 @@ if [ -n "$flag_all" ]; then
 			0) printf ' \e[32mfast-forwarded\e[0m: %s\n' "$(_shorthash "$base_hash")..$(_shorthash "$target_hash")"
 				git diff --stat "$base_hash" "$target_hash" --
 				;;
-			5) _skip "nothing to do"
+			5) printf ' \e[32mnothing to do\e[0m\n'
 				;;
 
 			1) _skip "diverged"
