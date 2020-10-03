@@ -130,7 +130,7 @@ if [ -n "$flag_all" ]; then
 	fi
 
 	if [ -n "$flag_fetch" ]; then
-		git fetch --all
+		git fetch
 	fi
 
 	_skip() {
