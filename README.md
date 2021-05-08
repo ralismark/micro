@@ -1,6 +1,6 @@
 # Micro
 
-A collection of shell scripts and other small programs I've made. No guarantees on how well these work.
+A collection of tiny projects I've made. No guarantees on how well these work -- I might not have touched them in a long time!
 
 ## mpp - MIPS Preprocessor
 
