@@ -49,3 +49,7 @@ These commands assume that `rsync` is installed on your local system and that `s
 ## git-ff - fast-forward a branch without checking it out
 
 This is similar to `git pull --ff-only` but can operate on branches you haven't checked out. There is also an `--all` flag to operate on all branches. Useful for updating your local repo to the state of upstream.
+
+## rofi-unicode - rofi-based unicode character/string picker
+
+This is currently only compatible with wayland
