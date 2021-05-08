@@ -101,3 +101,7 @@ and `test.c` will now only contain
 // feature not supported
 #endif
 ```
+
+## clacks - Shows icon for X-Clacks-Overhead
+
+This is a browser extension. If the current page has the `X-Clacks-Overhead` header or a corresponding meta tag, a clacks icon will appear in your URL bar.
