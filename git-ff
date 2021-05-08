@@ -212,8 +212,8 @@ else
 	# Get target
 	target_hash=
 	if [ $# -gt 0 ]; then
-		if ! target_hash=$(git show-ref -s "$2"); then
-			_die 128 "error: '$2' is not a valid object"
+		if ! target_hash=$(git show-ref -s "$1"); then
+			_die 128 "error: '$1' is not a valid object"
 		fi
 		shift
 	else
