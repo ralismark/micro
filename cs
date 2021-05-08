@@ -79,8 +79,8 @@ task() {
 
 	mkdir "$TASK"
 	cd "$TASK"
+	echo "TASK=$TASK" > .env
 	fetch
-
 	echo "TASK=$TASK" > .env
 }
 
