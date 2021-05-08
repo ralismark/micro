@@ -52,4 +52,52 @@ This is similar to `git pull --ff-only` but can operate on branches you haven't 
 
 ## rofi-unicode - rofi-based unicode character/string picker
 
-This is currently only compatible with wayland
+This is currently only compatible with wayland. The list of choices is embedded within the script.
+
+## ifdef-clean - C preprocessor conditional cleaner
+
+Usage: `ifdef-clean file1.c file2.c file3.c`. This program works in-place, rewriting the input files. `#elif` is not support.
+
+The use case for this program is if you have a C project with platform-specific macros, like this:
+
+```c
+#ifdef _WIN32
+// windows-specific thing
+#else
+// not windows
+#ifdef __unix__
+// linux stuff
+#else
+// some other operating system
+#endif
+#endif
+
+#if FEATURE
+// some feature
+#else
+// feature not supported
+#endif
+```
+
+`ifdef-clean` will prompt you for whether to include (`y`es) or exclude (`n`o) a particular branch of the condition (eliminating corresponding `#if`/`#else`/`#endif` lines), or to keep all branches as-is (`i`gnore). Your choices will be remembered and you will only be prompted on the first occurrence of any particular condition.
+
+e.g. with the above content in `test.c`:
+```
+$ ifdef-clean test.c
+#ifdef _WIN32 [yni]? n
+#ifdef __unix__ [yni]? y
+#if FEATURE [yni]? i
+```
+
+and `test.c` will now only contain
+
+```c
+// not windows
+// linux stuff
+
+#if FEATURE
+// some feature
+#else
+// feature not supported
+#endif
+```
