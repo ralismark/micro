@@ -1,6 +1,6 @@
-# Shellscripts
+# Micro
 
-A collection of shell scripts I've made.
+A collection of shell scripts and other small programs I've made. No guarantees on how well these work.
 
 ## mpp - MIPS Preprocessor
 
@@ -45,3 +45,7 @@ This is like the git command in that its actions are accessible via `cs <command
 - `cs give <exercise> <files>...` to submit files for a given exercise. The task is prepended to exercise, i.e. making `cs give shell_backup backup.sh` run `give cs2041 lab05_shell_backup backup.sh`.
 
 These commands assume that `rsync` is installed on your local system and that `ssh cse` connects to the CSE servers.
+
+## git-ff - fast-forward a branch without checking it out
+
+This is similar to `git pull --ff-only` but can operate on branches you haven't checked out. There is also an `--all` flag to operate on all branches. Useful for updating your local repo to the state of upstream.
