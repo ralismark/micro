@@ -2,6 +2,14 @@
 
 A collection of tiny projects I've made. No guarantees on how well these work -- I might not have touched them in a long time!
 
+## tunnel-run - Transparently run on the mounted filesystem
+
+This is a command wrapper that runs the command over ssh if you're in sshfs, and locally if you're on a local filesystem.
+
+You can also symlink other executables to this script, and `tunnel-run` will transparently tunnel them, or call the underlying executable if running locally.
+
+Note that this does not detect what options were supplied to sshfs.
+
 ## mpp - MIPS Preprocessor
 
 A minimal preprocessor for MIPS (particularly SPIM, which lacks complex directives). Currently supports two extra directives:
