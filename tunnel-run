@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PROGRAM_NAME=tunnel-run
+
+VERBOSE=false
+
+# Detect if we're being run through a symlink
+name=$(basename "$0")
+
+log() {
+	if $VERBOSE; then
+		echo "$@" >&2
+	fi
+}
+
+die() {
+	echo "$@" >&2; exit 1
+}
+
+ssh-run() {
+	local rel mountspec server basepath
+	rel=$(realpath . --relative-to="$(df . --output=target | sed -n 2p)")
+
+	mountspec=$(df . --output=source | sed -n 2p)
+	server=$(cut -d: -f1 <<< "$mountspec")
+	basepath=$(cut -d: -f2- <<< "$mountspec")
+
+	basepath=${basepath:-.} # Empty = relative to "current" dir
+	basepath=${basepath%/} # Strip trailing slash
+	basepath=${basepath:-/} # ...but restore it if the basepath is the root folder
+
+	log "Running on $server relative to $basepath rel=$rel"
+
+	exec ssh -t -- "$server" "cd $(printf %q "$basepath/$rel") && exec $(printf "%q " "$@")"
+}
+
+local-run() {
+	local cmd=$1
+	shift
+
+	realpath_self=$(realpath "$0")
+
+	# We want to find the first command that *isn't* symlinked to us
+	local candidate
+	while read -r candidate; do
+		[[ "$(realpath "$candidate")" = "$realpath_self" ]] && continue
+		# shellcheck disable=SC2093
+		exec "$candidate" "$@"
+		exit
+	done < <(which -a -- "$cmd" || die "$cmd not found")
+
+	die "$cmd not found"
+}
+
+dispatch() {
+	fs=$(df . --output=fstype | sed -n 2p)
+	case "$fs" in
+		fuse.sshfs)
+			ssh-run "$@"
+			;;
+		*)
+			local-run "$@"
+			;;
+	esac
+}
+
+if [[ -L "$0" ]] && [[ "$name" != "$PROGRAM_NAME" ]]; then
+	dispatch "$name" "$@"
+else
+	dispatch "$@"
+fi
