@@ -1,0 +1,36 @@
+#!/bin/sh
+
+fetch() {
+	curl -s http://classutil.unsw.edu.au/MATH_T3.html |
+		awk '
+	BEGIN { include=0 }
+	/class="cucourse".*MATH/ { include=0 }
+	/class="cucourse".*MATH3411/ { include=1 }
+	include && /^<td>TUT</ { print $0 }
+	' | sed '
+	s/<\/td>//g
+	s/<td[^>]*>/\t/g
+	s/&nbsp;//g
+	s/\//\t/g
+	s/^\t//
+	s/\s*\t\s*/\t/g
+	' | cut -f3,6 | grep '^4958'
+}
+
+previous=$(mktemp)
+current=$(mktemp)
+
+echo "$previous"
+echo "$current"
+
+fetch | tee "$previous"
+
+while sleep 1m; do
+	date +'%H:%M:%S'
+	fetch | tee "$current"
+	if ! diff "$previous" "$current"; then
+		echo -e "\e[41m        changed             \e[0m"
+		notify-send -t 0 "Utilisation changed" "$(diff -yW30 "$previous" "$current")"
+	fi
+	cp -- "$current" "$previous"
+done
