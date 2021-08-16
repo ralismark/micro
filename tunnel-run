@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROGRAM_NAME=tunnel-run
-
 VERBOSE=false
 
 # Detect if we're being run through a symlink
@@ -76,7 +74,7 @@ dispatch() {
 	esac
 }
 
-if [[ -L "$0" ]] && [[ "$name" != "$PROGRAM_NAME" ]]; then
+if [[ -L "$0" ]] && [[ "$name" != "$truename" ]]; then
 	dispatch "$name" "$@"
 else
 	dispatch "$@"

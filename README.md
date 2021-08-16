@@ -6,9 +6,11 @@ A collection of tiny projects I've made. No guarantees on how well these work --
 
 This is a command wrapper that runs the command over ssh if you're in sshfs, and locally if you're on a local filesystem.
 
-You can also symlink other executables to this script, and `tunnel-run` will transparently tunnel them, or call the underlying executable if running locally.
+You can also symlink other executables to this script, and `tunnel-run` will transparently tunnel them, or call the underlying executable if running locally. Doing this with svn or git, for example, can make those run reasonably fast.
 
 Note that this does not detect what options were supplied to sshfs.
+
+Tip: you can ssh into the target machine with `tunnel-run sh -c 'exec $SHELL --login'`.
 
 ## mpp - MIPS Preprocessor
 
