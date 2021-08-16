@@ -7,6 +7,7 @@ VERBOSE=false
 
 # Detect if we're being run through a symlink
 name=$(basename "$0")
+truename=$(basename "$(realpath "$0")")
 
 log() {
 	if $VERBOSE; then
@@ -32,7 +33,7 @@ ssh-run() {
 
 	log "Running on $server relative to $basepath rel=$rel"
 
-	exec ssh -t -- "$server" "cd $(printf %q "$basepath/$rel") && exec $(printf "%q " "$@")"
+	exec ssh -tq -- "$server" "cd $(printf %q "$basepath/$rel") && exec $(printf "%q " "$@")"
 }
 
 local-run() {
@@ -42,19 +43,29 @@ local-run() {
 	realpath_self=$(realpath "$0")
 
 	# We want to find the first command that *isn't* symlinked to us
-	local candidate
+	local candidate=""
 	while read -r candidate; do
-		[[ "$(realpath "$candidate")" = "$realpath_self" ]] && continue
-		# shellcheck disable=SC2093
-		exec "$candidate" "$@"
-		exit
+		[[ "$(realpath "$candidate")" != "$realpath_self" ]] && break
 	done < <(which -a -- "$cmd" || die "$cmd not found")
 
-	die "$cmd not found"
+	[[ -z "$candidate" ]] && die "$cmd not found"
+	exec "$candidate" "$@"
 }
 
 dispatch() {
+	local fs
 	fs=$(df . --output=fstype | sed -n 2p)
+
+	if [[ "${1:-}" = "locally" ]]; then
+		fs=""
+		shift
+	fi
+
+	if [[ "$#" = 0 ]]; then
+		echo "Usage: $truename [locally] COMMAND [ARGS...]"
+		exit
+	fi
+
 	case "$fs" in
 		fuse.sshfs)
 			ssh-run "$@"
