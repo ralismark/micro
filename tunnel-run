@@ -1,25 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERBOSE=false
-
 # Detect if we're being run through a symlink
 name=$(basename "$0")
 truename=$(basename "$(realpath "$0")")
 
-log() {
-	if $VERBOSE; then
-		echo "$@" >&2
-	fi
-}
-
-die() {
-	echo "$@" >&2; exit 1
-}
-
 ssh-run() {
 	local rel mountspec server basepath
-	rel=$(realpath . --relative-to="$(df . --output=target | sed -n 2p)")
+	rel=$(realpath . --relative-to="$(df "$(realpath .)" --output=target | sed -n 2p)")
 
 	mountspec=$(df . --output=source | sed -n 2p)
 	server=$(cut -d: -f1 <<< "$mountspec")
@@ -29,9 +17,14 @@ ssh-run() {
 	basepath=${basepath%/} # Strip trailing slash
 	basepath=${basepath:-/} # ...but restore it if the basepath is the root folder
 
-	log "Running on $server relative to $basepath rel=$rel"
+	# log "Running on $server relative to $basepath rel=$rel"
 
-	exec ssh -tq -- "$server" "cd $(printf %q "$basepath/$rel") && exec $(printf "%q " "$@")"
+	extra_flags=""
+	if [ -t 1 ]; then
+		extra_flags="-qt"
+	fi
+
+	exec ssh $extra_flags -- "$server" "cd $(printf %q "$basepath/$rel") && exec $(printf "%q " "$@")"
 }
 
 local-run() {
@@ -41,18 +34,27 @@ local-run() {
 	realpath_self=$(realpath "$0")
 
 	# We want to find the first command that *isn't* symlinked to us
-	local candidate=""
+	alt_bin=""
 	while read -r candidate; do
-		[[ "$(realpath "$candidate")" != "$realpath_self" ]] && break
-	done < <(which -a -- "$cmd" || die "$cmd not found")
+		if [[ "$(realpath "$candidate")" != "$realpath_self" ]]; then
+			alt_bin="$candidate"
+			break
+		fi
+	done < <(which -a -- "$cmd" 2>/dev/null || true)
 
-	[[ -z "$candidate" ]] && die "$cmd not found"
-	exec "$candidate" "$@"
+	if [ -n "$alt_bin" ]; then
+		# Can't exec inside the loop since stdin won't be connected to the terminal
+		# i.e. test -t 0 fails
+		exec "$alt_bin" "$@"
+	else
+		PATH=":" exec "$cmd" "$@"
+		exit "$?"
+	fi
 }
 
 dispatch() {
 	local fs
-	fs=$(df . --output=fstype | sed -n 2p)
+	fs=$(df "$(realpath .)" --output=fstype | sed -n 2p)
 
 	if [[ "${1:-}" = "locally" ]]; then
 		fs=""

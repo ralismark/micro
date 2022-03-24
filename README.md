@@ -10,6 +10,8 @@ This is a command wrapper that runs the command over ssh if you're in sshfs, and
 You can also symlink other executables to this script, and `tunnel-run` will transparently tunnel them, or call the underlying executable if running locally.
 Doing this with svn or git, for example, can make those run reasonably fast.
 
+Warning: The commands will run on a completely different filesystem, so absolute paths passed to/from the tunnelled command will likely not be correct!
+
 Note that this does not detect what options were supplied to sshfs.
 
 Tip: you can ssh into the target machine with `tunnel-run sh -c 'exec $SHELL --login'`.
