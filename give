@@ -1,0 +1,46 @@
+#!/bin/sh
+set -eu
+
+# Using this so that paths are correct
+tarpack()
+{
+	python3 -c '
+import sys, tarfile, pathlib
+with tarfile.open(fileobj=sys.stdout.buffer, mode="w|") as tf:
+	for path in sys.argv[1:]:
+		try:
+			tf.add(path, arcname=pathlib.Path(path).name)
+		except Exception as e:
+			print(e)
+			sys.exit(1)
+	' "$@"
+}
+
+remote_script=$(cat <<'EOF'
+DIR=$(mktemp -d -p .) &&
+trap 'rm -rf "$DIR"' EXIT &&
+tar -x -vv --one-top-level="$DIR" &&
+(cd "$DIR" && give "$COURSE" "$TASK" *)
+EOF
+)
+
+if [ "$#" -lt 2 ]; then
+	echo "usage: $(basename "$0") class assignment [files...]"
+	exit 1
+fi
+
+COURSE="$1"
+shift
+TASK="$1"
+shift
+
+# First do preliminary check that inputs exist
+# Mostly to avoid messier errors later if the inputs are missing
+for file in "$@"; do
+	if ! [ -e "$file" ]; then
+		echo "$(basename "$0"): cannot access '$file': No such file or directory"
+		exit 1
+	fi
+done
+
+tarpack "$@" | ssh cse -- "COURSE=${COURSE} TASK=${TASK} &&" "$remote_script"

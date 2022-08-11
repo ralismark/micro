@@ -128,3 +128,15 @@ Most of these require the environment variables `$COURSE` (e.g. `2041`) and `$TA
 - `cs give <exercise> <files>...` to submit files for a given exercise. The task is prepended to exercise, i.e. making `cs give shell_backup backup.sh` run `give cs2041 lab05_shell_backup backup.sh`.
 
 These commands assume that `rsync` is installed on your local system and that `ssh cse` connects to the CSE servers.
+
+## give
+
+An much more lightweight alternative to the above `cs` command.
+Usage is as follows:
+
+```
+$ give cs1521 a1 main.c main.h # any other files
+```
+
+This assumes that `ssh` has been configured such that `ssh cse` connect to CSE server.
+It copies the specified files over and runs `give` before deleting them.
