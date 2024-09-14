@@ -1,4 +1,23 @@
 #!/usr/bin/env bash
+# Transparently run on the mounted filesystem
+#
+# This is a command wrapper that runs the command over ssh if you're in sshfs,
+# and locally if you're on a local filesystem.
+#
+# You can also symlink other executables to this script, and `tunnel-run` will
+# transparently tunnel them, or call the underlying executable if running
+# locally. Doing this with svn or git, for example, can make those run
+# reasonably fast.
+#
+# Warning: The commands will run on a completely different filesystem, so
+# absolute paths passed to/from the tunnelled command will likely not be
+# correct!
+#
+# Note that this does not detect what options were supplied to sshfs.
+#
+# Tip: you can ssh into the target machine with `tunnel-run sh -c 'exec $SHELL
+# --login'`.
+
 set -euo pipefail
 
 # Detect if we're being run through a symlink
@@ -7,7 +26,7 @@ truename=$(basename "$(realpath "$0")")
 
 ssh-run() {
 	local rel mountspec server basepath
-	rel=$(realpath . --relative-to="$(df "$(realpath .)" --output=target | sed -n 2p)")
+	rel=$(realpath . --relative-to="$(df . --output=target | sed -n 2p)")
 
 	mountspec=$(df . --output=source | sed -n 2p)
 	server=$(cut -d: -f1 <<< "$mountspec")
@@ -54,7 +73,8 @@ local-run() {
 
 dispatch() {
 	local fs
-	fs=$(df "$(realpath .)" --output=fstype | sed -n 2p)
+	# TODO(2022-06-25) this (and above) used $(realpath .) instead of just ., does that do anything?
+	fs=$(df . --output=fstype | sed -n 2p)
 
 	if [[ "${1:-}" = "locally" ]]; then
 		fs=""

@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Builds and runs a Dockerfile
+#
+# As the blurb says. This can also be used as a shebang!
+#
+# Inspired by https://github.com/wknapik/dockerfile-run
+
+# Fail on any error and clean up.
+shopt -s inherit_errexit
+set -eEo pipefail
+
+if [ "$#" -eq 0 ]; then
+	echo "Usage: $0 DOCKERFILE [ARGS...]"
+	exit
+fi
+
+# Arg parsing
+dockerfile=$1
+shift
+
+trap 'cleanup' ERR INT TERM
+iid_file=$(mktemp)
+cleanup() {
+	rm -f "$iid_file"
+}
+
+docker_run_opts=(--rm --init)
+[[ -t 0 ]] && docker_run_opts+=(--interactive --tty)
+
+docker build --iidfile="$iid_file" "$dockerfile"
+
+iid=$(cat "$iid_file")
+
+# Delete any temporary files (there's also a trap that calls `cleanup', but it
+# doesn't kick in due to `exec').
+cleanup
+
+exec docker run "${docker_run_opts[@]}" "$iid" "$@"

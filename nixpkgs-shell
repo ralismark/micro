@@ -1,0 +1,20 @@
+#!/bin/sh
+# Abbreviation of `nix shell -f <nixpkgs>`
+#
+# Either spawn a shell with a package, or run a command from a package.
+set -eu
+
+if [ "$#" -lt 1 ]; then
+	cat >&2 <<EOF
+Usage: $(basename "$0") PKG [COMMAND] [ARG]...
+EOF
+	exit 1
+fi
+
+pkg="$1"
+shift
+if [ "$#" -lt 1 ]; then
+	exec nix shell -f '<nixpkgs>' "$pkg"
+else
+	exec nix shell -f '<nixpkgs>' "$pkg" -c "$@"
+fi

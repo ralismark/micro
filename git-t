@@ -1,0 +1,15 @@
+#!/bin/sh
+# Clone to a location within ~/src based on its url
+
+set -eu
+
+if [ "$#" -lt 1 ]; then
+	echo "fatal: You must specify a directory to clone"
+	exit 1
+elif [ "$#" -gt 1 ]; then
+	echo "fatal: Too many arguments"
+	exit 1
+fi
+
+url=$(echo "$1" | sed -Ee 's|\.git$||' -e 's|^https?://||' -e 's|git@([A-Za-z0-9_.]*):|\1/|')
+exec git clone --recursive "$1" "$HOME/src/$url"

@@ -1,0 +1,33 @@
+#!/bin/sh
+# Generate this command listing from the scripts
+#
+# Usage: `micro-describe FILE...`
+
+warn() {
+	printf '\e[31m%s\e[0m\n' "$@" >&2
+}
+
+md_escape() {
+	echo "$1" | sed -e 's/[_]/\\\0/g'
+}
+
+for file in "$@"; do
+	if ! [ -x "$file" -a -f "$file" ]; then
+		warn "$file is not executable"
+		continue
+	fi
+
+	if ! echo "$(head -1 "$file")" | grep -q "^$!"; then
+		warn "$file does not have a shebang"
+		continue
+	fi
+
+	printf '%s' "## $(md_escape "$file") - "
+	sed -En '
+	1d
+	/^#/!q
+	s/^# ?//
+	p
+	' "$file"
+	echo
+done

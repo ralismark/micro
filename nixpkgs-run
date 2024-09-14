@@ -1,0 +1,15 @@
+#!/bin/sh
+# Abbreviation of `nix run -f '<nixpkgs>' $cmd -- $args`
+
+set -eu
+
+if [ "$#" -lt 1 ]; then
+	cat >&2 <<EOF
+Usage: $(basename "$0") COMMAND [ARG]...
+EOF
+	exit 1
+fi
+
+pkg="$1"
+shift
+exec nix run -f '<nixpkgs>' "$pkg" -- "$@"

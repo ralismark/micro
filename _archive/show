@@ -1,0 +1,11 @@
+#!/bin/sh
+# Prints files with headers
+#
+# Like head when passed multiple arguments -- cats files, preceding each with a
+# header
+
+for arg in "$@"; do
+	printf '\e[32m==> %s <==\e[0m\n' "$arg"
+	cat -- "$arg"
+	echo
+done

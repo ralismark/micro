@@ -1,4 +1,5 @@
 #!/bin/sh
+# Watch for changes to tutorial/class enrolments
 
 fetch() {
 	curl -s http://classutil.unsw.edu.au/MATH_T3.html |

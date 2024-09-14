@@ -1,4 +1,38 @@
 #!/usr/bin/perl -w
+# MIPS preprocessor
+#
+# A minimal preprocessor for MIPS (particularly SPIM, which lacks complex
+# directives), to make writing it for COMP1521 a bit nicer and less error-prone.
+#
+# Currently supports two extra directives:
+#
+# - `.include <file>` to textually include a file (like #include in C)
+# - `.let @<var> <expr>` to replace `@var` with `<expr>`
+# - `.unlet @<var>` to undo a previous .let
+#
+# For example:
+#
+# <table>
+# <tr> <th>a.s</th> <th>b.s</th> </tr>
+# <tr> <td><pre lang="asm">
+# .let @foo $s3
+#     move @foo, $a0
+# .include b.s
+# </pre></td>
+#
+# <td><pre lang="asm">
+# .let @foo $t8
+#     move $v0, @foo
+# </pre></td>
+# </table>
+#
+# gets turned into
+#
+# ```asm
+#     move $s3, $a0
+#     move $v0, $t8
+# ```
+
 use strict;
 
 if (@ARGV == 0) {

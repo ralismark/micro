@@ -1,20 +1,86 @@
 #!/usr/bin/env bash
+# Unicode picker using rofi
+
 set -euo pipefail
 
 (
 	input=$(cat)
-	line=$(printf "%b" "$input" | grep -v '^$' | rofi -dmenu -i)
+	line=$(printf "%b" "$input" | grep -v '^\s*\(#.*\)\?$' | rofi -dmenu -i || exit 0)
 
 	if [ -n "$line" ]; then
 		sleep 0.1
 		echo -n "$(printf "%s" "$line" | cut -f1)" | wl-copy
-		notify-send "Picked!" "$line"
+		notify-send -t 5000 "Picked!" "$line"
 	fi
 ) <<'EOF'
 ¯\\_(ツ)_/¯	shrug
-I don’t like sand. It’s coarse and rough and irritating and it gets everywhere.
-So this is how liberty dies... with thunderous applause.
-Did you ever hear the tragedy of Darth Plagueis The Wise? I thought not. It's not a story the Jedi would tell you. It's a Sith legend. Darth Plagueis was a Dark Lord of the Sith, so powerful and so wise he could use the Force to influence the midichlorians to create life… He had such a knowledge of the dark side that he could even keep the ones he cared about from dying. The dark side of the Force is a pathway to many abilities some consider to be unnatural. He became so powerful… the only thing he was afraid of was losing his power, which eventually, of course, he did. Unfortunately, he taught his apprentice everything he knew, then his apprentice killed him in his sleep. Ironic. He could save others from death, but not himself.
+
+# IPA chart
+p	voiceless bilabial plosive stop x/p
+b	voiced bilabial plosive stop x/b
+t	voiceless alveolar plosive stop x/t
+d	voiced alveolar plosive stop x/d
+ʈ	voiceless retroflex plosive stop x/t`
+ɖ	voiced retroflex plosive stop x/d`
+c	voiceless palatal plosive stop x/c
+ɟ	voiced palatal plosive stop x/J\
+k	voiceless velar plosive stop x/k
+g	voiced velar plosive stop x/g
+q	voiceles uvular plosive stop x/q
+ʔ	glottal stop x/?
+
+m	bilabial nasal x/m
+ɱ	labiodental nasal x/F
+n	alveolar nasal x/n
+ɳ	retroflex nasal x/n`
+ɲ	palatal nasal x/J
+ŋ	velar nasal x/N
+ɴ	uvular nasal x/N\
+
+ʙ	bilabial trill x/B\
+r	alveolar trill x/r
+ʀ	uvular trill x/R\
+
+ⱱ	labiodental flap tap
+ɾ	alveolar flap tap x/4
+ɽ	retroflex flap tap x/r`
+
+ɸ	voiceless bilabial fricative x/p\
+β	voiced bilabial fricative x/B
+f	voiceless labiodental fricative x/f
+v	voiced labiodental fricative x/v
+θ	voiceless dental fricative x/T
+ð	voiced dental fricative x/D
+s	voiceless alveolar fricative x/s
+z	voiced alveolar fricative x/z
+ʃ	voiceless post-alveolar fricative x/S
+ʒ	voiced post-alveolar fricative x/Z
+ʂ	voiceless retroflex fricative x/s`
+ʐ	voiced retroflex fricative x/z`
+ç	voiceless palatal fricative x/C
+ʝ	voiced palatal fricative x/j\
+x	voiceless velar fricative x/x
+ɣ	voiced velar fricative x/G
+χ	voiceless uvular fricative x/X
+ʁ	voiced uvular fricative x/R
+ħ	voiceless pharyngeal fricative x/X\
+ʕ	voiced pharyngeal fricative x/?\
+h	voiceless glottal fricative x/h
+ɦ	voiced glottal fricative x/h\
+
+ɬ	voiceless alveolar lateral fricative x/K
+ɮ	voiced alveolar lateral fricative x/K\
+
+ʋ	labiodental approximant x/v\ x/P
+ɹ	alveolar approximant x/r\
+ɻ	retroflex approximant x/r\`
+j	palatal approximant x/j
+ɰ	velar approximant x/M\
+
+l	alveolar lateral approximant x/l
+ɭ	retroflex lateral approximant x/l`
+ʎ	palatal lateral approximant x/L
+ʟ	velar lateral approximant x/L\
 
 \u00a0	no-break space &nbsp;
 \u00a7	section sign
@@ -23,6 +89,17 @@ Did you ever hear the tragedy of Darth Plagueis The Wise? I thought not. It's no
 
 \u00b1	plus-minus sign \\pm
 \u00b7	middle dot \\cdot
+
+\u2070	superscript 0 ^0
+\u00B9	superscript 1 ^1
+\u00B2	superscript 2 ^2
+\u00B3	superscript 3 ^3
+\u2074	superscript 4 ^4
+\u2075	superscript 5 ^5
+\u2076	superscript 6 ^6
+\u2077	superscript 7 ^7
+\u2078	superscript 8 ^8
+\u2079	superscript 9 ^9
 
 \u03b1	\\alpha
 \u03b2	\\beta
@@ -78,10 +155,10 @@ Did you ever hear the tragedy of Darth Plagueis The Wise? I thought not. It's no
 \u03a8	\\Psi
 \u03a9	\\Omega
 
-\u2200	FOR ALL
+\u2200	FOR ALL \\forall
 \u2201	COMPLEMENT
 \u2202	PARTIAL DIFFERENTIAL
-\u2203	THERE EXISTS
+\u2203	THERE EXISTS \\exists
 \u2204	THERE DOES NOT EXIST
 \u2205	EMPTY SET
 \u2206	INCREMENT
@@ -335,11 +412,11 @@ Did you ever hear the tragedy of Darth Plagueis The Wise? I thought not. It's no
 \u22fe	SMALL CONTAINS WITH OVERBAR
 \u22ff	Z NOTATION BAG MEMBERSHIP
 
-\u2190	LEFTWARDS ARROW \\leftarrow
+\u2190	LEFTWARDS ARROW \\leftarrow <-
 \u2191	UPWARDS ARROW \\uparrow
-\u2192	RIGHTWARDS ARROW \\rightarrow
+\u2192	RIGHTWARDS ARROW \\rightarrow ->
 \u2193	DOWNWARDS ARROW \\downarrow
-\u2194	LEFT RIGHT ARROW \\leftrightarrows
+\u2194	LEFT RIGHT ARROW \\leftrightarrows <->
 \u2195	UP DOWN ARROW \\updownarrows
 \u2196	NORTH WEST ARROW
 \u2197	NORTH EAST ARROW
@@ -399,11 +476,11 @@ Did you ever hear the tragedy of Darth Plagueis The Wise? I thought not. It's no
 \u21cd	LEFTWARDS DOUBLE ARROW WITH STROKE
 \u21ce	LEFT RIGHT DOUBLE ARROW WITH STROKE
 \u21cf	RIGHTWARDS DOUBLE ARROW WITH STROKE
-\u21d0	LEFTWARDS DOUBLE ARROW
+\u21d0	LEFTWARDS DOUBLE ARROW \\Leftarrow <=
 \u21d1	UPWARDS DOUBLE ARROW
-\u21d2	RIGHTWARDS DOUBLE ARROW
+\u21d2	RIGHTWARDS DOUBLE ARROW \\Rightarrow =>
 \u21d3	DOWNWARDS DOUBLE ARROW
-\u21d4	LEFT RIGHT DOUBLE ARROW
+\u21d4	LEFT RIGHT DOUBLE ARROW \\Leftrightarrrow <=>
 \u21d5	UP DOWN DOUBLE ARROW
 \u21d6	NORTH WEST DOUBLE ARROW
 \u21d7	NORTH EAST DOUBLE ARROW
@@ -447,4 +524,7 @@ Did you ever hear the tragedy of Darth Plagueis The Wise? I thought not. It's no
 \u21fd	LEFTWARDS OPEN-HEADED ARROW
 \u21fe	RIGHTWARDS OPEN-HEADED ARROW
 \u21ff	LEFT RIGHT OPEN-HEADED ARROW
+
+\u3008	LEFT ANGLE BRACKET \\langle <
+\u3009	RIGHT ANGLE BRACKET \\rangle >
 EOF

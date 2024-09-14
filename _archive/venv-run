@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# Transparently run with venv binaries
+#
+# For use with python venv; this runs the provided command, using the binary in
+# venv if it exists without needing to activate the venv
+
+# Begin Config
+VENVRUN_ALLOW_GLOBAL="${VENVRUN_ALLOW_GLOBAL:-0}" # Do we allow invoking outside of virtualenv
+VENVRUN_VENV_NAME="${VENVRUN_VENV_NAME:-venv}" # Name of directory to look for virtual envs in
+# End Config
+
+name=$(basename "$0")
+truename=$(basename "$(realpath "$0")")
+
+find_venv() {
+	# Traverse up the path, looking for folders named $VENVRUN_VENV_NAME
+	path=$PWD
+	while [ -n "$path" ]; do
+		if [ -f "$path/$VENVRUN_VENV_NAME/pyvenv.cfg" ]; then
+			echo "$path/$VENVRUN_VENV_NAME"
+			return 0
+		fi
+		path=${path%/*}
+	done
+	return 1
+}
+
+local-run() {
+	local cmd=$1
+	shift
+
+	echo "$@"
+
+	realpath_self=$(realpath "$0")
+
+	# We want to find the first command that *isn't* symlinked to us
+	alt_bin=""
+	while read -r candidate; do
+		if [[ "$(realpath "$candidate")" != "$realpath_self" ]]; then
+			alt_bin="$candidate"
+			break
+		fi
+	done < <(which -a -- "$cmd" 2>/dev/null || true)
+
+	if [ -n "$alt_bin" ]; then
+		# Can't exec inside the loop since stdin won't be connected to the terminal
+		# i.e. test -t 0 fails
+		exec "$alt_bin" "$@"
+	else
+		PATH=":" exec "$cmd" "$@"
+		exit "$?"
+	fi
+}
+
+venv_run() {
+	if [ "$#" = 0 ]; then
+		echo "Usage: $name COMMAND [ARGS...]"
+		return 255
+	fi
+
+	# Precondition: at least one argument is passed
+	cmd=$1
+	shift
+
+	if venv=$(find_venv); then
+		unset PYTHONHOME
+		exec "$venv/bin/$cmd" "$@"
+	elif [ "$VENVRUN_ALLOW_GLOBAL" -ne 0 ]; then
+		local-run "$cmd" "$@"
+	else
+		echo "$truename: not in a virtual environment (looking for '$VENVRUN_VENV_NAME')" >&2
+		exit 255
+	fi
+}
+
+if [ -L "$0" ] && [ "$name" != "$truename" ]; then
+	venv_run "$name" "$@"
+else
+	venv_run "$@"
+fi

@@ -1,0 +1,84 @@
+#!/usr/bin/env python3
+# Serve a website where you can upload files to the current system
+
+import flask
+from flask import request
+from werkzeug.utils import secure_filename
+import click
+
+app = flask.Flask(__name__)
+
+OPT_MULTIPLE = False
+
+TEMPLATE = lambda content: """
+    <!doctype html>
+    <html>
+    <head>
+        <meta charset="utf-8" />
+        <style>
+            body {
+                max-width: 30rem;
+                padding: 1rem;
+                margin: auto;
+            }
+
+            input[type=submit] {
+                float: right;
+                padding: .1rem .5rem;
+            }
+        </style>
+    </head>
+    <body>
+        """ + content + """
+    </body>
+    </html>
+"""
+
+@app.get("/")
+def app_index():
+    return TEMPLATE(f"""
+        <form method="post" enctype="multipart/form-data">
+            <h1>Select file{"s" if OPT_MULTIPLE else ""} to upload</h1>
+            <input {"multiple" if OPT_MULTIPLE else ""} type="file" name="files">
+            <br>
+            <input type="submit" value="Upload">
+        </form>
+    """)
+
+@app.get("/accepted")
+def app_submitted():
+    return TEMPLATE(f"""
+        <p>Your file{"s" if OPT_MULTIPLE else ""} have been received! :)</p>
+    """)
+
+@app.post("/")
+def app_upload():
+    if request.form.getlist("files") == [""]:
+        return TEMPLATE("""
+            <p>Nothing selected :(</p>
+            <p>
+                <a href="/">Go back</a>
+            </p>
+        """)
+
+    # upload handler
+    for file in request.files.getlist("files"):
+        print(f"Received {secure_filename(file.filename)!r}")
+        file.save(secure_filename(file.filename))
+
+    return TEMPLATE(f"""
+        <p>Your file{"s" if OPT_MULTIPLE else ""} have been received! :)</p>
+    """)
+
+@click.command()
+@click.option("--bind", "-b", type=str, default="0.0.0.0", help="Address to bind on")
+@click.option("--port", type=click.IntRange(0, 65535), default=17009, help="Port to serve on")
+@click.option("--multiple/--single", default=True, help="Accept multiple or single files")
+def main(bind, port, multiple):
+    global OPT_MULTIPLE
+    OPT_MULTIPLE = multiple
+
+    app.run(host=bind, port=port)
+
+if __name__ == "__main__":
+    main()

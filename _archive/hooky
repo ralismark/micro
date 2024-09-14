@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Poor-man's global hook manager
+
+HOOK=$(basename "$0")
+TRUENAME=$(basename "$(realpath "$0")")
+HOOK_BASE_DIR="${XDG_CONFIG_HOME:-${HOME}/.config}/git"
+
+log() {
+	printf '[\e[32m%s\e[0m] %s\n' "$TRUENAME" "$*" >&2
+}
+
+log_err() {
+	log "$(printf '\e[31m%s\e[0m' "$*")"
+}
+
+if [ "$HOOK" = "$TRUENAME" ]; then
+	# Running as a standalone program
+	# TODO like a help message? ability to install hooks for things
+	log_err "running as standalone program not yet implemented!"
+	exit 255
+fi
+
+# capture stdin. We can't just stdin=$(cat) since that loses trailing newlines
+# see: https://unix.stackexchange.com/q/154485/319760
+stdin=$(cat; echo x)
+stdin="${stdin%x}"
+
+HOOK_DIR="$HOOK_BASE_DIR/$HOOK.d"
+
+if ! [ -d "$HOOK_DIR" ]; then
+	log_err "hook dir \"$HOOK_DIR\" is missing"
+	exit
+fi
+
+shopt -s nullglob # so this expansion doesn't break if it doesn't match
+for f in "$HOOK_DIR"/*; do
+	if [ -f "$f" ] && [ -x "$f" ]; then
+		#log "Running hook $(basename "$f")..."
+		printf "%s" "$stdin" | "$f" "$@" || exit $?
+	else
+		log_err "\"$f\" is not an executable file"
+	fi
+done

@@ -1,4 +1,17 @@
 #!/bin/sh
+# Submit an assignment, but from your local system
+#
+# A much more lightweight alternative to `cs` using python3 and _not_ rsync.
+# Usage is as follows:
+#
+# ```
+# $ give cs1521 a1 main.c main.h # any other files
+# ```
+#
+# This assumes that `ssh` has been configured such that `ssh cse` connect to CSE
+# server. It copies the specified files over and runs `give` before deleting
+# them.
+
 set -eu
 
 # Using this so that paths are correct

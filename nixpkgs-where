@@ -1,0 +1,11 @@
+#!/bin/sh
+# Find which nixpkgs package has a binary
+#
+# Requires nix-locate to be set up
+
+set -eu
+
+for prog in "$@"; do
+	nix-locate --top-level --whole-name -- "/bin/$prog" |
+		sed -Ee 's|/nix/store/[a-z0-9]{32}[^/]*||'
+done

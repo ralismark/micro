@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+# Prettifier multitool
+#
+# Prettifies various formats
+
+import sys
+import click
+
+
+class IndentParam(click.ParamType):
+    """
+    Parses an indent specifier
+    """
+
+    name = "integer or 'tabs'"
+
+    def convert(self, value, param, ctx):
+        if value in ("tab", "tabs"):
+            return "\t"
+        try:
+            num = int(value)
+        except ValueError:
+            self.fail(f"{value!r} is not a nonnegative integer", param, ctx)
+
+        return " " * num
+
+
+@click.group()
+@click.option("--indent", "indent", type=IndentParam(), default=2)
+@click.pass_context
+def cli(ctx, indent):
+    """
+    Top-level command group
+    """
+    ctx.ensure_object(dict)
+    ctx.obj["INDENT"] = indent
+
+
+def prettifier(*args, **kwargs):
+    """
+    Helper to register a prettifier
+    """
+    decorators = [
+        cli.command(*args, **kwargs),
+        click.argument("file", type=click.File("r"), default=sys.stdin),
+        click.pass_obj,
+    ]
+
+    def decorate(fn):
+        for dec in reversed(decorators):
+            fn = dec(fn)
+        return fn
+
+    return decorate
+
+
+@prettifier("json")
+def pretty_json(opts, file):
+    import json
+    json.dump(json.load(file), sys.stdout, indent=opts["INDENT"])
+    print() # trailing newline
+
+
+@prettifier("xml")
+def pretty_xml(opts, file):
+    import xml.dom.minidom
+    print(xml.dom.minidom.parse(sys.stdin).toprettyxml(indent=opts["INDENT"]))
+
+
+if __name__ == "__main__":
+    cli()

@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Take screenshot and show a drag-and-drop popup with it
+
+for DRAGON in dragon dragon-drag-and-drop dragon-drop; do
+	if which "$DRAGON" > /dev/null; then
+		break
+	fi
+done
+
+screenshot()
+{
+	if [ "$XDG_SESSION_TYPE" = "wayland" ] || [ -n "$WAYLAND_DISPLAY" ]; then
+		grim -g "$(slurp)" "$1"
+	else
+		maim -su "$1"
+	fi
+}
+
+clipboard()
+{
+	if [ "$XDG_SESSION_TYPE" = "wayland" ] || [ -n "$WAYLAND_DISPLAY" ]; then
+		wl-copy -t image/png < "$@"
+	else
+		xclip -selection clipboard -t image/png -i "$@"
+	fi
+}
+
+temp="$(mktemp -p /tmp XXXXXXXXXX.png)"
+
+screenshot "$temp" && {
+	clipboard "$temp"
+	$DRAGON "$temp"
+}
+
+# allow programs to take this file, then cleanup
+sleep 60
+rm "$temp"

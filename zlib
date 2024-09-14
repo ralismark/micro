@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+# Compress and decompress zlib streams
+
+import argparse
+import io
+import sys
+import zlib
+
+BUFSIZE = 4096
+
+
+def cmd_deflate(args: argparse.Namespace):
+    infile: io.BufferedReader = args.infile
+
+    filt = zlib.decompressobj()
+    while True:
+        din = infile.read(BUFSIZE)
+        if not din:
+            break
+        dout = filt.decompress(din)
+        sys.stdout.buffer.write(dout)
+
+    sys.stdout.buffer.write(filt.flush())
+
+
+def cmd_inflate(args: argparse.Namespace):
+    print(args)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="zlib tool",
+    )
+    subparsers = parser.add_subparsers(
+        title="Available commands",
+        required=True,
+    )
+
+    deflate = subparsers.add_parser(
+        "deflate",
+        help="Compress input",
+    )
+    deflate.set_defaults(func=cmd_deflate)
+    deflate.add_argument(
+        "infile",
+        type=argparse.FileType("rb"),
+        nargs="?",
+        default=sys.stdin.buffer,
+    )
+
+    inflate = subparsers.add_parser("inflate", help="Decompress input")
+    inflate.set_defaults(func=cmd_inflate)
+
+    args = parser.parse_args()
+    args.func(args)
+
+
+if __name__ == "__main__":
+    main()

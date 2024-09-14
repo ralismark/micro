@@ -1,0 +1,44 @@
+#!/bin/bash
+# Set up a basic python project
+
+set -euo pipefail
+
+project_name=$(basename "$(realpath .)")
+
+git init
+git copy-id github
+git commit -m "Initial commit" --allow-empty
+
+python3 -m venv venv
+
+# defer to setup.py
+echo "-e ." > requirements.txt
+
+# create setup.py
+cat >setup.py <<EOF
+#!/usr/bin/env python3
+
+from setuptools import setup
+
+setup(
+    name="$project_name",
+    version="0.1.0",
+    description="$project_name",
+    install_requires=[
+        # add dependencies here
+    ],
+    entry_points={
+        "console_scripts": [
+        ]
+    },
+)
+EOF
+
+cat >.gitignore <<EOF
+__pycache__
+*.egg-info
+venv
+EOF
+
+git add .gitignore setup.py requirements.txt
+git commit -m "Init project"
