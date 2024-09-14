@@ -3,6 +3,9 @@
 A collection of tiny projects I've made.
 No guarantees on how well these work -- I might not have touched them in a long time!
 
+- `_archive` contains things that I no longer use or care about, but might still have some gems that you'd be interested in 
+- `_unsw` is for stuff specific to UNSW and CSE; if you aren't a student you probably don't care
+
 ## ifdef-clean - C preprocessor conditional cleaner
 
 Usage: `ifdef-clean file1.c file2.c file3.c`.
