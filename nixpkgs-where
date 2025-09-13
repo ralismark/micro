@@ -6,6 +6,6 @@
 set -eu
 
 for prog in "$@"; do
-	nix-locate --top-level --whole-name -- "/bin/$prog" |
+	nix-locate --whole-name -- "/bin/$prog" |
 		sed -Ee 's|/nix/store/[a-z0-9]{32}[^/]*||'
 done
